@@ -32,14 +32,16 @@ private class BlinkyManagerImpl(
 ): BleManager(context), Blinky {
     private val scope = CoroutineScope(Dispatchers.IO)
 
+    private var timeCharacteristic: BluetoothGattCharacteristic? = null
+    private var timezoneCharacteristic: BluetoothGattCharacteristic?= null
+    private var timemodeCharacteristic: BluetoothGattCharacteristic?=  null
+    private var dstCharacteristic: BluetoothGattCharacteristic?=null
+    private var notificationbarCharacteristic: BluetoothGattCharacteristic? = null
+    private var incomingcallCharacteristic: BluetoothGattCharacteristic?=null
+    private var incomingtextCharacteristic:BluetoothGattCharacteristic?=null
+
     private var ledCharacteristic: BluetoothGattCharacteristic? = null
     private var buttonCharacteristic: BluetoothGattCharacteristic? = null
-
-    private val _ledState = MutableStateFlow(false)
-    override val ledState = _ledState.asStateFlow()
-
-    private val _buttonState = MutableStateFlow(false)
-    override val buttonState = _buttonState.asStateFlow()
 
     override val state = stateAsFlow()
         .map {
@@ -91,6 +93,15 @@ private class BlinkyManagerImpl(
         }
     }
 
+    override suspend fun updateClock(state: Boolean){
+        writeCharacteristic(
+            timeCharacteristic
+            TimeData.from(state),
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        ).suspend()
+
+        _timeState.value = state
+    }
     override suspend fun turnLed(state: Boolean) {
         // Write the value to the characteristic.
         writeCharacteristic(
@@ -115,8 +126,24 @@ private class BlinkyManagerImpl(
 
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
         // Get the LBS Service from the gatt object.
-        gatt.getService(BlinkySpec.BLINKY_SERVICE_UUID)?.apply {
+        gatt.getService(BlinkySpec.KEPLER_CLOCK_SERVICE_UUID)?.apply {
             // Get the LED characteristic.
+            // get the time characteristic
+            timeCharacteristic = getCharacteristic(
+                BlinkySpec.KEPLER_TIME_CHARACTERISTIC_UUID
+
+            )
+            timezoneCharacteristic = getCharacteristic(
+                BlinkySpec.KEPLER_TIME_ZONE_CHARACTERISTIC_UUID
+            )
+            timemodeCharacteristic = getCharacteristic(
+                BlinkySpec.KEPLER_TIME_MODE_CHARACTERISTIC_UUID
+            )
+            dstCharacteristic = getCharacteristic(
+                BlinkySpec.KEPLER_DAYLIGHT_SAVING_CHARACTERISTIC_UUID
+
+
+            )
             ledCharacteristic = getCharacteristic(
                 BlinkySpec.BLINKY_LED_CHARACTERISTIC_UUID,
                 // Mind, that below we pass required properties.
@@ -131,7 +158,7 @@ private class BlinkyManagerImpl(
             )
 
             // Return true if all required characteristics are supported.
-            return ledCharacteristic != null && buttonCharacteristic != null
+            return timeCharacteristic != null && timezoneCharacteristic != null&& timemodeCharacteristic != null&& dstCharacteristic != null
         }
         return false
     }
@@ -164,5 +191,9 @@ private class BlinkyManagerImpl(
     override fun onServicesInvalidated() {
         ledCharacteristic = null
         buttonCharacteristic = null
+        timeCharacteristic = null
+        timemodeCharacteristic = null
+        timezoneCharacteristic = null
+        dstCharacteristic = null
     }
 }
