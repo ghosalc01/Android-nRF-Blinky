@@ -31,6 +31,7 @@
 
 package no.nordicsemi.android.scanner.model
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
@@ -88,6 +89,7 @@ data class DiscoveredBluetoothDevice(
         get() = displayName ?: address
 
     val bondingState: Int
+        @SuppressLint("MissingPermission")
         get() = device.bondState
 
     val isBonded: Boolean

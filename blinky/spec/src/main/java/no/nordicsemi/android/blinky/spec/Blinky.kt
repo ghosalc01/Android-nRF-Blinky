@@ -25,6 +25,19 @@ interface Blinky {
      */
     val state: StateFlow<State>
 
+    val timeState: StateFlow<Boolean>
+
+    val timezoneState: StateFlow<Boolean>
+
+    val timemodeState: StateFlow<Boolean>
+
+    val dstState: StateFlow<Boolean>
+
+    val notificationState: StateFlow<Boolean>
+
+    val incomingcallState: StateFlow<Boolean>
+    val incomingtextState: StateFlow<Boolean>
+
     /**
      * The current state of the LED.
      */

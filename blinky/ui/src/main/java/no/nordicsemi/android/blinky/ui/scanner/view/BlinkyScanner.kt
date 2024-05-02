@@ -15,7 +15,7 @@ fun BlinkyScanner(
 ) {
     ScannerScreen(
         title = stringResource(id = R.string.scanner_title),
-        uuid = ParcelUuid(BlinkySpec.BLINKY_SERVICE_UUID),
+        uuid = ParcelUuid(BlinkySpec.KEPLER_CLOCK_SERVICE_UUID),
         cancellable = false,
         onResult = { result ->
             when (result) {
