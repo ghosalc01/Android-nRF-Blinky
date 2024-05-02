@@ -3,8 +3,10 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_retry">Retry</string>
 
-    <string name="blinky_led">LED</string>
-    <string name="blinky_led_descr">Switch to toggle the LED</string>
+    <string name="blinky_Time_Mode">Time Mode</string>
+    <string name="blinky_led_descr">Switch to toggle the Time Mode between 12hr and 24hr</string>
+    <string name="blinky_dst_Mode">DST</string>
+    <string name="blinky_dst_descr">Switch to toggle whether to have Daylight Savings On or Off</string>
 
     <string name="blinky_button">Button</string>
     <string name="blinky_button_descr">The button state</string>

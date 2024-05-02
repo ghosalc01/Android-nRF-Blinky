@@ -59,13 +59,17 @@ internal fun BlinkyScreen(
                     }
                 }
                 Blinky.State.READY -> {
-                    val ledState by viewModel.ledState.collectAsStateWithLifecycle()
+                    val timeModeState by viewModel.timeModeState.collectAsStateWithLifecycle()
+                    val dstState by viewModel.dstState.collectAsStateWithLifecycle()
                     val buttonState by viewModel.buttonState.collectAsStateWithLifecycle()
 
                     BlinkyControlView(
-                        ledState = ledState,
+                        timeModeState = timeModeState,
+                        dstState = dstState,
                         buttonState = buttonState,
-                        onStateChanged = { viewModel.turnLed(it) },
+                        onStateChanged = { viewModel.timeModeUpdate(it) },
+                        ondstStateChanged = {viewModel.dstUpdate(it)},
+
                         modifier = Modifier
                             .widthIn(max = 460.dp)
                             .verticalScroll(rememberScrollState())

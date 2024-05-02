@@ -31,8 +31,11 @@ class BlinkyViewModel @Inject constructor(
 ) : AndroidViewModel(context as Application) {
     /** The connection state of the device. */
     val state = repository.state
-    /** The LED state. */
-    val ledState = repository.loggedLedState
+    /** The Time Mode state. */
+    val timeModeState = repository.loggedTimeModeState
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
+    //** The DST mode state. */
+    val dstState = repository.loggedDstState
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
     /** The button state. */
     val buttonState = repository.loggedButtonState
@@ -60,12 +63,20 @@ class BlinkyViewModel @Inject constructor(
      * Sends a command to the device to toggle the LED state.
      * @param on The new state of the LED.
      */
-    fun turnLed(on: Boolean) {
+    fun timeModeUpdate(on: Boolean) {
         val exceptionHandler = CoroutineExceptionHandler { _, _ -> }
         viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
             // Just like above, when this method throws an exception, it will be caught by the
             // exception handler and ignored.
-            repository.turnLed(on)
+            repository.timeModeUpdate(on)
+        }
+    }
+    fun dstUpdate(on: Boolean) {
+        val exceptionHandler = CoroutineExceptionHandler { _, _ -> }
+        viewModelScope.launch(Dispatchers.IO + exceptionHandler) {
+            // Just like above, when this method throws an exception, it will be caught by the
+            // exception handler and ignored.
+            repository.dstUpdate(on)
         }
     }
 

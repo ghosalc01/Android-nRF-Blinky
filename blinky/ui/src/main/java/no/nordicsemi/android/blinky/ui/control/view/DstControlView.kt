@@ -20,9 +20,9 @@ import no.nordicsemi.android.blinky.ui.R
 import no.nordicsemi.android.common.theme.NordicTheme
 
 @Composable
-internal fun LedControlView(
+internal fun DstControlView(
     state: Boolean,
-    onStateChanged: (Boolean) -> Unit,
+    ondstStateChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
@@ -30,7 +30,7 @@ internal fun LedControlView(
     ) {
         Column(
             modifier = Modifier
-                .clickable { onStateChanged(!state) }
+                .clickable { ondstStateChanged(!state) }
                 .padding(16.dp)
         ) {
             Row(
@@ -45,7 +45,7 @@ internal fun LedControlView(
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                 )
                 Text(
-                    text = stringResource(R.string.blinky_led),
+                    text = stringResource(R.string.blinky_dst_Mode),
                     style = MaterialTheme.typography.headlineMedium,
                 )
             }
@@ -55,10 +55,10 @@ internal fun LedControlView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.blinky_led_descr),
+                    text = stringResource(R.string.blinky_dst_descr),
                     modifier = Modifier.weight(1f)
                 )
-                Switch(checked = state, onCheckedChange = onStateChanged)
+                Switch(checked = state, onCheckedChange = ondstStateChanged)
             }
         }
     }
@@ -66,11 +66,11 @@ internal fun LedControlView(
 
 @Composable
 @Preview
-private fun LecControlViewPreview() {
+private fun DstControlViewPreview() {
     NordicTheme {
-        LedControlView(
+        DstControlView(
             state = true,
-            onStateChanged = {},
+            ondstStateChanged = {},
             modifier = Modifier.padding(16.dp),
         )
     }

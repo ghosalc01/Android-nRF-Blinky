@@ -38,16 +38,28 @@ class BlinkyRepository @Inject constructor(
             .also { sessionUri = it.session?.sessionUri }
     }
 
-    val loggedLedState: Flow<Boolean>
-        get() = blinky.ledState.onEach {
+    val loggedTimeModeState: Flow<Boolean>
+        get() = blinky.timeModeState.onEach {
             // Although Timber log levels are the same as LogCat's, nRF Logger has its own.
             // All standard log levels are mapped to the corresponding nRF Logger's levels:
             // https://github.com/NordicSemiconductor/nRF-Logger-API/blob/f90d5834c46cc2057b6a9f39dcbb8f2f2dd45d56/log-timber/src/main/java/no/nordicsemi/android/log/timber/nRFLoggerTree.java#L104
             // However, in order to log in nRF Logger on APPLICATION level, we need to use
             // that level explicitly.
             when(it) {
-                true -> Timber.log(LogContract.Log.Level.APPLICATION, "LED turned ON")
-                false -> Timber.log(LogContract.Log.Level.APPLICATION, "LED turned OFF")
+                true -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 12 hrs")
+                false -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 24hrs")
+            }
+        }
+    val loggedDstState: Flow<Boolean>
+        get() = blinky.dstState.onEach {
+            // Although Timber log levels are the same as LogCat's, nRF Logger has its own.
+            // All standard log levels are mapped to the corresponding nRF Logger's levels:
+            // https://github.com/NordicSemiconductor/nRF-Logger-API/blob/f90d5834c46cc2057b6a9f39dcbb8f2f2dd45d56/log-timber/src/main/java/no/nordicsemi/android/log/timber/nRFLoggerTree.java#L104
+            // However, in order to log in nRF Logger on APPLICATION level, we need to use
+            // that level explicitly.
+            when(it) {
+                true -> Timber.log(LogContract.Log.Level.APPLICATION, "DST ON")
+                false -> Timber.log(LogContract.Log.Level.APPLICATION, "DST OFF")
             }
         }
 
