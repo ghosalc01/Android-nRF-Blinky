@@ -30,10 +30,6 @@ internal fun BlinkyControlView(
             state = dstState,
             ondstStateChanged = ondstStateChanged,
         )
-
-        ButtonControlView(
-            state = buttonState
-        )
     }
 }
 

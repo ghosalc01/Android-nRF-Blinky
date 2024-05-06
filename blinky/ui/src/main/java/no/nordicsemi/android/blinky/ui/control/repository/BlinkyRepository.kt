@@ -46,8 +46,8 @@ class BlinkyRepository @Inject constructor(
             // However, in order to log in nRF Logger on APPLICATION level, we need to use
             // that level explicitly.
             when(it) {
-                true -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 12 hrs")
-                false -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 24hrs")
+                true -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 24 hrs")
+                false -> Timber.log(LogContract.Log.Level.APPLICATION, "Time Mode 12hrs")
             }
         }
     val loggedDstState: Flow<Boolean>

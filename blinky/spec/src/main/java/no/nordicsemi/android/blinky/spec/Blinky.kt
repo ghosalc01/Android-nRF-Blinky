@@ -24,26 +24,19 @@ interface Blinky {
      * The current state of the blinky.
      */
     val state: StateFlow<State>
-
-    val timeState: StateFlow<Boolean>
-
-    val timezoneState: StateFlow<Boolean>
-
-    val timemodeState: StateFlow<Boolean>
-
-    val dstState: StateFlow<Boolean>
-
-    val notificationState: StateFlow<Boolean>
-
-    val incomingcallState: StateFlow<Boolean>
-    val incomingtextState: StateFlow<Boolean>
-
     /**
-     * The current state of the LED.
+     * The current state of the time Mode.
      */
     val timeModeState: StateFlow<Boolean>
-
+    /**
+     * The current state of the daylight savings.
+     */
     val dstState:StateFlow<Boolean>
+
+    /**
+     * The current state of the Time.
+     */
+    val timeState: StateFlow<Int>
 
     /**
      * The current state of the button.
@@ -51,11 +44,17 @@ interface Blinky {
     val buttonState: StateFlow<Boolean>
 
     /**
-     * Controls the LED state.
+     * Controls the time mode state.
      *
-     * @param state the new state of the LED.
+     * @param state the new state of the time mode.
      */
     suspend fun timeModeUpdate(state: Boolean)
-
+    /**
+     * Controls the daylight savings state.
+     *
+     * @param state the new state of the daylight savings state.
+     */
     suspend fun dstUpdate(state: Boolean)
+
+    suspend fun timeUpdate()
 }

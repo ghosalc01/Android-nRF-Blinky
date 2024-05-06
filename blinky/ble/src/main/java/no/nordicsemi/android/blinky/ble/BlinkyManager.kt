@@ -3,18 +3,20 @@ package no.nordicsemi.android.blinky.ble
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import no.nordicsemi.android.ble.BleManager
-import no.nordicsemi.android.ble.ktx.asValidResponseFlow
+import no.nordicsemi.android.ble.data.Data
+import no.nordicsemi.android.ble.data.MutableData
 import no.nordicsemi.android.ble.ktx.getCharacteristic
 import no.nordicsemi.android.ble.ktx.state.ConnectionState
 import no.nordicsemi.android.ble.ktx.stateAsFlow
 import no.nordicsemi.android.ble.ktx.suspend
-import no.nordicsemi.android.blinky.ble.data.ButtonCallback
-import no.nordicsemi.android.blinky.ble.data.ButtonState
+import no.nordicsemi.android.blinky.ble.data.TimeCallback
+import no.nordicsemi.android.blinky.ble.data.TimeData
 import no.nordicsemi.android.blinky.ble.data.TimeModeCallback
 import no.nordicsemi.android.blinky.ble.data.TimeModeData
 import no.nordicsemi.android.blinky.ble.data.dstCallback
@@ -22,6 +24,9 @@ import no.nordicsemi.android.blinky.ble.data.dstData
 import no.nordicsemi.android.blinky.spec.Blinky
 import no.nordicsemi.android.blinky.spec.BlinkySpec
 import timber.log.Timber
+import java.math.BigInteger
+import java.nio.ByteBuffer
+import java.time.Instant
 
 class BlinkyManager(
     context: Context,
@@ -34,12 +39,16 @@ private class BlinkyManagerImpl(
 ): BleManager(context), Blinky {
     private val scope = CoroutineScope(Dispatchers.IO)
 
+    private var time:BluetoothGattCharacteristic? = null
     private var timeMode: BluetoothGattCharacteristic? = null
     private var buttonCharacteristic: BluetoothGattCharacteristic? = null
     private var dstMode: BluetoothGattCharacteristic? = null
 
     private val _dstState = MutableStateFlow(false)
     override val dstState = _dstState.asStateFlow()
+
+    private val _timeState = MutableStateFlow(0)
+    override val timeState = _timeState.asStateFlow()
 
     private val _timeModeState = MutableStateFlow(false)
     override val timeModeState = _timeModeState.asStateFlow()
@@ -60,13 +69,6 @@ private class BlinkyManagerImpl(
         .stateIn(scope, SharingStarted.Lazily, Blinky.State.NOT_AVAILABLE)
 
 
-    private val buttonCallback by lazy {
-        object : ButtonCallback() {
-            override fun onButtonStateChanged(device: BluetoothDevice, state: Boolean) {
-                _buttonState.tryEmit(state)
-            }
-        }
-    }
 
     private val timeModeCallback by lazy {
         object : TimeModeCallback() {
@@ -79,6 +81,13 @@ private class BlinkyManagerImpl(
         object : dstCallback() {
             override fun onDstStateChanged(device: BluetoothDevice, state: Boolean) {
                 _dstState.tryEmit(state)
+            }
+        }
+    }
+    private val timeCallback by lazy {
+        object: TimeCallback(){
+            override fun onTimeStateChanged(device: BluetoothDevice, state: Int) {
+                _timeState.tryEmit(state)
             }
         }
     }
@@ -103,6 +112,15 @@ private class BlinkyManagerImpl(
         if (wasConnected) {
             disconnect().enqueue()
         }
+    }
+    override suspend fun timeUpdate() {
+
+        writeCharacteristic(
+            time,
+            TimeData.data,
+            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        ).suspend()
+
     }
 
     override suspend fun timeModeUpdate(state: Boolean) {
@@ -137,9 +155,9 @@ private class BlinkyManagerImpl(
     }
 
     override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-        // Get the LBS Service from the gatt object.
+        // Get the Clock Service from the gatt object.
         gatt.getService(BlinkySpec.KEPLER_CLOCK_SERVICE_UUID)?.apply {
-            // Get the LED characteristic.
+            // Get the Time Mode characteristic.
             timeMode = getCharacteristic(
                 BlinkySpec.KEPLER_TIME_MODE_CHARACTERISTIC_UUID,
                 // Mind, that below we pass required properties.
@@ -147,6 +165,7 @@ private class BlinkyManagerImpl(
                 // change the property to BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE.
                 BluetoothGattCharacteristic.PROPERTY_WRITE
             )
+            // get the Daylight Saving Characteristic
             dstMode = getCharacteristic(
                 BlinkySpec.KEPLER_DAYLIGHT_SAVING_CHARACTERISTIC_UUID,
                 // Mind, that below we pass required properties.
@@ -154,12 +173,9 @@ private class BlinkyManagerImpl(
                 // change the property to BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE.
                 BluetoothGattCharacteristic.PROPERTY_WRITE
             )
-
-            // Get the Button characteristic.
-
-            buttonCharacteristic = getCharacteristic(
-                BlinkySpec.BLINKY_BUTTON_CHARACTERISTIC_UUID,
-                BluetoothGattCharacteristic.PROPERTY_NOTIFY
+            time = getCharacteristic(
+                BlinkySpec.KEPLER_TIME_CHARACTERISTIC_UUID,
+                BluetoothGattCharacteristic.PROPERTY_WRITE
             )
 
             // Return true if all required characteristics are supported.
@@ -170,36 +186,30 @@ private class BlinkyManagerImpl(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun initialize() {
-        // Enable notifications for the button characteristic.
-        val flow: Flow<ButtonState> = setNotificationCallback(buttonCharacteristic)
-            .asValidResponseFlow()
-
-        // Forward the button state to the buttonState flow.
-        scope.launch {
-            flow.map { it.state }.collect { _buttonState.tryEmit(it) }
-        }
-
-        enableNotifications(buttonCharacteristic)
-            .enqueue()
-
-        // Read the initial value of the button characteristic.
-        readCharacteristic(buttonCharacteristic)
-            .with(buttonCallback)
-            .enqueue()
-
-        // Read the initial value of the LED characteristic.
+        // Read the initial value of the Time Mode characteristic.
         readCharacteristic(timeMode)
             .with(timeModeCallback)
             .enqueue()
+        // Read the initial value of the Daylight Saving characteristic.
 
         readCharacteristic(dstMode)
             .with(dstCallback)
             .enqueue()
+        // Read the initial value of the time characteristic.
+
+        readCharacteristic(time)
+            .with(timeCallback)
+            .enqueue()
+
+        scope.launch {
+            timeUpdate()
+        }
     }
 
     override fun onServicesInvalidated() {
         timeMode = null
         dstMode = null
-        buttonCharacteristic = null
+        time = null
     }
 }
+
